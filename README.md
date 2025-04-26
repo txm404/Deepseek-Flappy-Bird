@@ -1,7 +1,5 @@
 # 🐦 像素小鸟游戏 [v1.2.0]
 
-![Game Screenshot](./screenshot.png)
-
 一个使用Python+Pygame制作的经典Flappy Bird风格街机游戏，具有流畅的物理引擎和怀旧像素画风。
 
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)]()
