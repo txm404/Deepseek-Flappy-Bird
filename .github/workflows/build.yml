@@ -95,16 +95,17 @@ jobs:
           build\main.dist\flappy-bird-windows-*.exe
           build\main.dist\
 
-
   publish-release:
     needs: [build-linux, build-windows]
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'release'           
-      || startsWith(github.ref, 'refs/tags/')  
-      || (github.event_name == 'push' && github.ref == 'refs/heads/main')  
     steps:
-      # 1. 下载构建结果（Linux + Windows）
+      # 1️⃣ 必须加上这个代码拉取步骤，否则 git 命令无法运行！
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 确保拉取完整历史，否则无法推送 Tag
+
+      # 2. 下载构建的 Linux + Windows 文件
       - name: Download Linux build
         uses: actions/download-artifact@v4
         with:
@@ -117,7 +118,7 @@ jobs:
           name: windows-build
           path: release-artifacts
 
-      # 2. 压缩 Linux & Windows 构建
+      # 3. 压缩构建文件
       - name: Zip Linux build
         run: |
           cd release-artifacts
@@ -128,8 +129,8 @@ jobs:
           cd release-artifacts
           find . -name "flappy-bird-windows-*.exe" | xargs -I{} zip -j {}.zip {}
 
-      # 3. 自动创建 Git Tag（只有在 push 到 main 时才创建）
-      - name: Create and push Git tag (仅限网页修改 main)
+      # 4. 如果是在 push 到 main 时触发，自动创建 Git Tag
+      - name: Create and push Git tag
         if: "github.event_name == 'push' && github.ref == 'refs/heads/main'"
         run: |
           git config --global user.name "GitHub Actions"
@@ -140,11 +141,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 4. 上传构建结果到 GitHub Release
+      # 5. 上传构建文件到 GitHub Release
       - name: Upload to Release
         uses: softprops/action-gh-release@v1
         with:
-          files: "release-artifacts/*.zip"  # 上传 zip 文件
+          files: "release-artifacts/*.zip"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
