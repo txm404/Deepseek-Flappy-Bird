@@ -29,7 +29,7 @@ jobs:
       run: |
         python -m nuitka \
           --follow-imports \
-          --enable-plugin=pygame \
+          --include-package-data=pygame \
           --standalone \
           --lto=yes \
           --remove-output \
@@ -62,19 +62,20 @@ jobs:
       run: |
         # 安装Windows版SDL2依赖
         choco install -y vcpython27 sdl2 sdl2_ttf sdl2_image
-        pip install pygame
+        pip install pygame==2.5.2
 
     - name: Install Nuitka
       run: pip install nuitka
 
     - name: Build with Nuitka
+      shell: cmd
       run: |
         python -m nuitka ^
-          --follow-imports ^
-          --enable-plugin=pygame ^
-          --standalone ^
-          --lto=yes ^
-          --windows-icon-from-exe=main.py
+        --follow-imports ^
+        --include-package-data=pygame ^
+        --standalone ^
+        --lto=yes ^
+        --windows-icon-from-exe=main.py
 
     - name: Rename executable
       run: |
