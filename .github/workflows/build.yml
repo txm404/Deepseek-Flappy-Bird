@@ -20,7 +20,11 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libsdl2-dev libsdl2-ttf-dev libsdl2-image-dev
+        sudo apt-get install -y \
+          libsdl2-dev \
+          libsdl2-ttf-dev \
+          libsdl2-image-dev \
+          libsdl2-mixer-dev
 
     - name: Install Nuitka
       run: pip install nuitka
@@ -28,20 +32,35 @@ jobs:
     - name: Build with Nuitka
       run: |
         python -m nuitka \
+          --standalone \
+          --onefile \
           --follow-imports \
           --include-package-data=pygame \
-          --onefile \
           --lto=yes \
-          --output-dir=build \
-          -o flappy-bird \
+          --output-dir=dist \
+          --remove-output \
           main.py
 
-    - name: Package binary
+    - name: Verify and package binary
       run: |
-        TIMESTAMP=$(date +%Y%m%d%H%M) && \
-        mkdir -p flappy-bird-linux-$TIMESTAMP && \
-        cp build/main.dist/flappy-bird flappy-bird-linux-$TIMESTAMP/flappy-bird-linux-$TIMESTAMP && \
+        TIMESTAMP=$(date +%Y%m%d%H%M)
+        mkdir -p flappy-bird-linux-$TIMESTAMP
+        
+        # 查找生成的可执行文件
+        if [ -f "dist/main.dist/main" ]; then
+          cp dist/main.dist/main flappy-bird-linux-$TIMESTAMP/flappy-bird-linux-$TIMESTAMP
+        elif [ -f "dist/main" ]; then
+          cp dist/main flappy-bird-linux-$TIMESTAMP/flappy-bird-linux-$TIMESTAMP
+        else
+          echo "ERROR: No executable found in dist/"
+          ls -R dist/
+          exit 1
+        fi
+        
         chmod +x flappy-bird-linux-$TIMESTAMP/flappy-bird-linux-$TIMESTAMP
+
+        # 验证是否能运行
+        ./flappy-bird-linux-$TIMESTAMP/flappy-bird-linux-$TIMESTAMP --version || true
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
@@ -62,7 +81,12 @@ jobs:
 
     - name: Install dependencies
       run: |
-        choco install -y vcpython27 sdl2 sdl2_ttf sdl2_image
+        choco install -y `
+          vcpython27 `
+          sdl2 `
+          sdl2_ttf `
+          sdl2_image `
+          sdl2_mixer
         pip install pygame==2.5.2
 
     - name: Install Nuitka
@@ -72,35 +96,46 @@ jobs:
       shell: cmd
       run: |
         python -m nuitka ^
-        --follow-imports ^
-        --include-package-data=pygame ^
-        --onefile ^
-        --lto=yes ^
-        --windows-disable-console ^
-        --assume-yes-for-downloads ^
-        --output-dir=build ^
-        main.py
+          --standalone ^
+          --onefile ^
+          --follow-imports ^
+          --include-package-data=pygame ^
+          --lto=yes ^
+          --windows-disable-console ^
+          --assume-yes-for-downloads ^
+          --output-dir=dist ^
+          --remove-output ^
+          main.py
 
-    - name: Rename executable
+    - name: Package Windows build
       run: |
-        ren build\main.dist\main.exe flappy-bird-windows-$(Get-Date -Format "yyyyMMddHHmm").exe
+        $timestamp = Get-Date -Format "yyyyMMddHHmm"
+        $exeName = "flappy-bird-windows-$timestamp.exe"
+        
+        if (Test-Path "dist\main.dist\main.exe") {
+          Move-Item -Path "dist\main.dist\main.exe" -Destination "dist\$exeName"
+        } elseif (Test-Path "dist\main.exe") {
+          Move-Item -Path "dist\main.exe" -Destination "dist\$exeName"
+        } else {
+          Write-Output "ERROR: No executable found in dist/"
+          Get-ChildItem -Path dist -Recurse
+          exit 1
+        }
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: windows-build
-        path: |
-          build\main.dist\flappy-bird-windows-*.exe
-          build\main.dist\
+        path: dist\flappy-bird-windows-*.exe
 
   publish-release:
     needs: [build-linux, build-windows]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  
 
       - name: Download Linux build
         uses: actions/download-artifact@v4
@@ -114,32 +149,35 @@ jobs:
           name: windows-build
           path: release-artifacts
 
-      - name: Zip Linux build
+      - name: Prepare release assets
         run: |
+          # Linux
           cd release-artifacts
           find . -name "flappy-bird-linux-*" -type d | xargs -I{} zip -r {}.zip {}
 
-      - name: Zip Windows build
-        run: |
-          cd release-artifacts
-          find . -name "flappy-bird-windows-*.exe" | xargs -I{} zip -j {}.zip {}
+          # Windows
+          find . -name "flappy-bird-windows-*.exe" -exec zip -j {}.zip {} \;
+          ls -lh *.zip
 
-      - name: Create and push Git tag
-        if: "github.event_name == 'push' && github.ref == 'refs/heads/main'"
+      - name: Create release tag
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           TAG="v$(date +%Y.%m.%d-%H%M)"
           git tag $TAG
           git push origin $TAG
-          echo "TAG=$TAG" >> $GITHUB_ENV  
+          echo "TAG=$TAG" >> $GITHUB_ENV
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload to Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.TAG }}  
-          files: "release-artifacts/*.zip"
+          tag_name: ${{ env.TAG }}
+          files: |
+            release-artifacts/*.zip
+            release-artifacts/*.exe.zip
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
