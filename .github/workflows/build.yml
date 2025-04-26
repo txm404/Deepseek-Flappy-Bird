@@ -37,36 +37,40 @@ jobs:
           --follow-imports \
           --include-package-data=pygame \
           --lto=yes \
+          --output-filename=flappy-bird \
           --output-dir=dist \
           --remove-output \
           main.py
 
-    - name: Verify and package binary
+    - name: Package Linux build
       run: |
         TIMESTAMP=$(date +%Y%m%d%H%M)
-        mkdir -p flappy-bird-linux-$TIMESTAMP
-        
-        # 查找生成的可执行文件
-        if [ -f "dist/main.dist/main" ]; then
-          cp dist/main.dist/main flappy-bird-linux-$TIMESTAMP/flappy-bird-linux-$TIMESTAMP
+        # 尝试所有可能的输出路径
+        if [ -f "dist/flappy-bird" ]; then
+          BINARY_PATH="dist/flappy-bird"
         elif [ -f "dist/main" ]; then
-          cp dist/main flappy-bird-linux-$TIMESTAMP/flappy-bird-linux-$TIMESTAMP
+          BINARY_PATH="dist/main"
+        elif [ -f "dist/main.bin" ]; then
+          BINARY_PATH="dist/main.bin"
         else
-          echo "ERROR: No executable found in dist/"
-          ls -R dist/
+          echo "::error::无法找到可执行文件，当前dist目录内容："
+          ls -lh dist/
           exit 1
         fi
-        
-        chmod +x flappy-bird-linux-$TIMESTAMP/flappy-bird-linux-$TIMESTAMP
 
-        # 验证是否能运行
-        ./flappy-bird-linux-$TIMESTAMP/flappy-bird-linux-$TIMESTAMP --version || true
+        mkdir -p release
+        cp "$BINARY_PATH" "release/flappy-bird-$TIMESTAMP"
+        chmod +x "release/flappy-bird-$TIMESTAMP"
+
+        # 验证二进制文件
+        file "release/flappy-bird-$TIMESTAMP" || true
+        ldd "release/flappy-bird-$TIMESTAMP" || true
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: linux-build
-        path: flappy-bird-linux-*
+        path: release/flappy-bird-*
 
   build-windows:
     runs-on: windows-latest
@@ -104,23 +108,29 @@ jobs:
           --windows-disable-console ^
           --assume-yes-for-downloads ^
           --output-dir=dist ^
+          --output-filename=flappy-bird.exe ^
           --remove-output ^
           main.py
 
     - name: Package Windows build
       run: |
         $timestamp = Get-Date -Format "yyyyMMddHHmm"
-        $exeName = "flappy-bird-windows-$timestamp.exe"
         
-        if (Test-Path "dist\main.dist\main.exe") {
-          Move-Item -Path "dist\main.dist\main.exe" -Destination "dist\$exeName"
+        if (Test-Path "dist\flappy-bird.exe") {
+          $exePath = "dist\flappy-bird.exe"
         } elseif (Test-Path "dist\main.exe") {
-          Move-Item -Path "dist\main.exe" -Destination "dist\$exeName"
+          $exePath = "dist\main.exe"
         } else {
-          Write-Output "ERROR: No executable found in dist/"
-          Get-ChildItem -Path dist -Recurse
+          Write-Output "::error::无法找到可执行文件，当前dist目录内容："
+          Get-ChildItem -Path dist
           exit 1
         }
+
+        $newName = "flappy-bird-windows-$timestamp.exe"
+        Move-Item -Path $exePath -Destination "dist\$newName"
+        
+        # 验证文件
+        Get-Item "dist\$newName" | Select-Object Name, Length, LastWriteTime
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
