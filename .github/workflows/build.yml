@@ -33,15 +33,16 @@ jobs:
           --standalone \
           --lto=yes \
           --output-dir=build \
+          -o flappy-bird \
           main.py
 
-    - name: Rename binary
+    - name: Package binary
       run: |
         TIMESTAMP=$(date +%Y%m%d%H%M) && \
-        mv build/main.dist flappy-bird-linux-$TIMESTAMP && \
-        cd flappy-bird-linux-$TIMESTAMP && \
-        mv -f main flappy-bird && \
-        cd ..
+        mkdir flappy-bird-linux-$TIMESTAMP && \
+        cp -r build/main.dist/* flappy-bird-linux-$TIMESTAMP/ && \
+        mv flappy-bird-linux-$TIMESTAMP/flappy-bird flappy-bird-linux-$TIMESTAMP/flappy-bird-$TIMESTAMP && \
+        chmod +x flappy-bird-linux-$TIMESTAMP/flappy-bird-$TIMESTAMP
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
@@ -78,7 +79,6 @@ jobs:
         --standalone ^
         --lto=yes ^
         --windows-disable-console ^
-        --plugin-enable=pygame ^
         --assume-yes-for-downloads ^
         --output-dir=build ^
         main.py
