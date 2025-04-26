@@ -1,52 +1,89 @@
-name: Build Python Executable
+name: Nuitka Build
 
 on:
   push:
-    branches: [ main ] # Or your default branch name if different
-
-# Add permissions for creating releases
-permissions:
-  contents: write
+    branches: [ "main" ]
+  release:
+    types: [created]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest # Use Linux runner for bin
-
+  build-linux:
+    runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11' # Specify a Python version
+        python-version: '3.9'
 
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install nuitka pygame
+        sudo apt-get update
+        sudo apt-get install -y libsdl2-dev libsdl2-ttf-dev libsdl2-image-dev
+
+    - name: Install Nuitka
+      run: pip install nuitka
 
     - name: Build with Nuitka
-      run: python -m nuitka --standalone --follow-imports --output-dir=build_output main.py
-      # Note: If you encounter issues with missing data files (like fonts),
-      # you might need to add --include-data-files or --include-package-data options.
-      # For system fonts like 'Noto Sans CJK TC', ensure the target system has them,
-      # or bundle a font file with --include-data-files=path/to/font.ttf=font.ttf
-      # and modify main.py to load the bundled font.
-
-    - name: Package executable
-      shell: bash # Use Bash for zip on Linux
       run: |
-        cd build_output/main.dist
-        zip -r ../../main-linux-${{ github.sha }}.zip .
-        cd ../.. # Go back to the root directory
+        python -m nuitka \
+          --follow-imports \
+          --enable-plugin=pygame \
+          --standalone \
+          --lto=yes \
+          --remove-output \
+          main.py
 
-    - name: Create Release and Upload Asset
-      uses: softprops/action-gh-release@v2
+    - name: Rename binary
+      run: |
+        mv main.bin flappy-bird-linux-$(date +%Y%m%d%H%M)
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
       with:
-        files: main-linux-${{ github.sha }}.zip
-        tag_name: build-${{ github.run_number }}-${{ github.sha }} # Create a unique tag
-        name: Linux Build ${{ github.run_number }} (${{ github.sha }})
-        body: Automated build of main.py for Linux. Triggered by commit ${{ github.sha }}.
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is automatically provided by GitHub
+        name: linux-build
+        path: |
+          flappy-bird-linux-*
+          main.dist/
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+        architecture: 'x64'
+
+    - name: Install dependencies
+      run: |
+        # 安装Windows版SDL2依赖
+        choco install -y vcpython27 sdl2 sdl2_ttf sdl2_image
+        pip install pygame
+
+    - name: Install Nuitka
+      run: pip install nuitka
+
+    - name: Build with Nuitka
+      run: |
+        python -m nuitka ^
+          --follow-imports ^
+          --enable-plugin=pygame ^
+          --standalone ^
+          --lto=yes ^
+          --windows-icon-from-exe=main.py
+
+    - name: Rename executable
+      run: |
+        ren main.exe flappy-bird-windows-$(Get-Date -Format "yyyyMMddHHmm").exe
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: windows-build
+        path: |
+          flappy-bird-windows-*.exe
+          main.dist/
