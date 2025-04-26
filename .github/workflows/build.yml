@@ -95,53 +95,53 @@ jobs:
           build\main.dist\flappy-bird-windows-*.exe
           build\main.dist\
 
-publish-release:
-  needs: [build-linux, build-windows]
-  runs-on: ubuntu-latest
-  if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')  # 允许 Release 或 Tag 触发
-  steps:
-    # 1. 下载 Linux & Windows 构建结果
-    - name: Download Linux build
-      uses: actions/download-artifact@v4
-      with:
-        name: linux-build
-        path: release-artifacts
-
-    - name: Download Windows build
-      uses: actions/download-artifact@v4
-      with:
-        name: windows-build
-        path: release-artifacts
-
-    # 2. 压缩 Linux & Windows 二进制文件
-    - name: Zip Linux build
-      run: |
-        cd release-artifacts
-        find . -name "flappy-bird-linux-*" -type d | xargs -I{} zip -r {}.zip {}
-
-    - name: Zip Windows build
-      run: |
-        cd release-artifacts
-        find . -name "flappy-bird-windows-*.exe" | xargs -I{} zip -j {}.zip {}
-
-    # 3. 自动创建 Git Tag（如果当前没有 Tag）
-    - name: Create and push Git tag (if none exists)
-      if: "!startsWith(github.ref, 'refs/tags/')"  # 如果不在 Tag 上运行，则自动创建
-      run: |
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
-        TAG="v$(date +%Y.%m.%d-%H%M)"  # 格式如 v2024.03.12-1530
-        git tag $TAG
-        git push origin $TAG
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    # 4. 上传构建结果到 GitHub Release
-    - name: Upload to Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: |
-          release-artifacts/*.zip
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+  publish-release:
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')  # 允许 Release 或 Tag 触发
+    steps:
+      # 1. 下载 Linux & Windows 构建结果
+      - name: Download Linux build
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-build
+          path: release-artifacts
+  
+      - name: Download Windows build
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-build
+          path: release-artifacts
+  
+      # 2. 压缩 Linux & Windows 二进制文件
+      - name: Zip Linux build
+        run: |
+          cd release-artifacts
+          find . -name "flappy-bird-linux-*" -type d | xargs -I{} zip -r {}.zip {}
+  
+      - name: Zip Windows build
+        run: |
+          cd release-artifacts
+          find . -name "flappy-bird-windows-*.exe" | xargs -I{} zip -j {}.zip {}
+  
+      # 3. 自动创建 Git Tag（如果当前没有 Tag）
+      - name: Create and push Git tag (if none exists)
+        if: "!startsWith(github.ref, 'refs/tags/')"  # 如果不在 Tag 上运行，则自动创建
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          TAG="v$(date +%Y.%m.%d-%H%M)"  # 格式如 v2024.03.12-1530
+          git tag $TAG
+          git push origin $TAG
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+      # 4. 上传构建结果到 GitHub Release
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release-artifacts/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
