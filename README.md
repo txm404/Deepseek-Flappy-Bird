@@ -64,7 +64,7 @@ def game_logic():
 ## 🖼️ 截图展示
 | 游戏开始 | 进行中 | 游戏结束 |
 |----------|--------|----------|
-| ![Start](media/screenshots/start.png) | ![Gameplay](media/screenshots/gameplay.png) | ![Over](media/screenshots/over.png) |
+| ![Start](https://raw.gitmirror.com/txm404/Deepseek-Flappy-Bird/refs/heads/master/screenshot.png) | ![Gameplay](media/screenshots/gameplay.png) | ![Over](media/screenshots/over.png) |
 
 ## 🛠️ 开发指南
 ```bash
