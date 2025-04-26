@@ -32,20 +32,20 @@ jobs:
           --include-package-data=pygame \
           --standalone \
           --lto=yes \
-          --remove-output \
+          --output-dir=build \
           main.py
 
     - name: Rename binary
       run: |
-        mv main.bin flappy-bird-linux-$(date +%Y%m%d%H%M)
+        mv build/main.dist/main flappy-bird-linux-$(date +%Y%m%d%H%M)
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: linux-build
         path: |
-          flappy-bird-linux-*
-          main.dist/
+          build/flappy-bird-linux-*
+          build/main.dist/
 
   build-windows:
     runs-on: windows-latest
@@ -75,16 +75,16 @@ jobs:
         --include-package-data=pygame ^
         --standalone ^
         --lto=yes ^
-        --windows-icon-from-exe=main.py
+        --output-dir=build 
 
     - name: Rename executable
       run: |
-        ren main.exe flappy-bird-windows-$(Get-Date -Format "yyyyMMddHHmm").exe
+        ren build\main.dist\main.exe flappy-bird-windows-$(Get-Date -Format "yyyyMMddHHmm").exe
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: windows-build
         path: |
-          flappy-bird-windows-*.exe
-          main.dist/
+          build\flappy-bird-windows-*.exe
+          build\main.dist\
