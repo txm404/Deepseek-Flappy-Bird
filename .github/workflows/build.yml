@@ -40,7 +40,7 @@ jobs:
         mv main.bin flappy-bird-linux-$(date +%Y%m%d%H%M)
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: linux-build
         path: |
@@ -81,7 +81,7 @@ jobs:
         ren main.exe flappy-bird-windows-$(Get-Date -Format "yyyyMMddHHmm").exe
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: windows-build
         path: |
