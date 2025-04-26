@@ -92,5 +92,40 @@ jobs:
       with:
         name: windows-build
         path: |
-          build\flappy-bird-windows-*.exe
+          build\main.dist\flappy-bird-windows-*.exe
           build\main.dist\
+
+  publish-release:
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+      - name: Download Linux build
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-build
+          path: release-artifacts
+
+      - name: Download Windows build
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-build
+          path: release-artifacts
+
+      - name: Zip Linux build
+        run: |
+          cd release-artifacts
+          find . -name "flappy-bird-linux-*" -type d | xargs -I{} zip -r {}.zip {}
+
+      - name: Zip Windows build
+        run: |
+          cd release-artifacts
+          find . -name "flappy-bird-windows-*.exe" | xargs -I{} zip -j {}.zip {}
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release-artifacts/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
