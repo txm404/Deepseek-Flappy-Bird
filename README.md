@@ -62,7 +62,7 @@ def game_logic():
 ## 🖼️ 截图展示
 | 游戏开始 | 进行中 | 游戏结束 |
 |----------|--------|----------|
-| ![Start](https://raw.gitmirror.com/txm404/Deepseek-Flappy-Bird/refs/heads/master/screenshot.png) | ![Gameplay](https://raw.gitmirror.com/txm404/Deepseek-Flappy-Bird/refs/heads/master/2025-04-26_10-36.png) | ![Over](https://raw.gitmirror.com/txm404/Deepseek-Flappy-Bird/refs/heads/master/2025-04-26_10-39.png) |
+| ![Start](https://raw.gitmirror.com/txm404/Deepseek-Flappy-Bird/refs/heads/main/screenshot.png) | ![Gameplay](https://raw.gitmirror.com/txm404/Deepseek-Flappy-Bird/refs/heads/main/2025-04-26_10-36.png) | ![Over](https://raw.gitmirror.com/txm404/Deepseek-Flappy-Bird/refs/heads/main/2025-04-26_10-39.png) |
 
 ## 🛠️ 开发指南
 ```bash
