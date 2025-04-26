@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest # Use Windows runner for .exe
+    runs-on: ubuntu-latest # Use Linux runner for bin
 
     steps:
     - name: Checkout code
@@ -31,15 +31,19 @@ jobs:
       # and modify main.py to load the bundled font.
 
     - name: Package executable
-      shell: pwsh # Use PowerShell for Compress-Archive on Windows
-      run: Compress-Archive -Path build_output/main.dist/* -DestinationPath main-windows-${{ github.sha }}.zip
+      shell: bash # Use Bash for zip on Linux
+      run: |
+        cd build_output/main.dist
+        zip -r ../../main-linux-${{ github.sha }}.zip .
+        cd ../.. # Go back to the root directory
 
     - name: Create Release and Upload Asset
       uses: softprops/action-gh-release@v2
       with:
-        files: main-windows-${{ github.sha }}.zip
+        files: main-linux-${{ github.sha }}.zip
         tag_name: build-${{ github.run_number }}-${{ github.sha }} # Create a unique tag
-        name: Build ${{ github.run_number }} (${{ github.sha }})
-        body: Automated build of main.py for Windows. Triggered by commit ${{ github.sha }}.
+        name: Linux Build ${{ github.run_number }} (${{ github.sha }})
+        body: Automated build of main.py for Linux. Triggered by commit ${{ github.sha }}.
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is automatically provided by GitHub
+
