@@ -16,11 +16,11 @@
 ### 安装运行
 ```bash
 # 克隆仓库
-git clone https://github.com/username/pixel-bird.git
-cd pixel-bird
+git clone https://github.com/txm404/Deepseek-Flappy-Bird.git
+cd Deepseek-Flappy-Bird
 
 # 安装依赖
-pip install -r requirements.txt
+pip install pygame
 
 # 启动游戏
 python main.py
@@ -68,9 +68,6 @@ def game_logic():
 
 ## 🛠️ 开发指南
 ```bash
-# 运行测试
-python tests/game_test.py
-
 # 打包可执行文件
 pyinstaller --onefile main.py
 ```
