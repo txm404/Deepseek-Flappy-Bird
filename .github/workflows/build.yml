@@ -30,7 +30,6 @@ jobs:
         python -m nuitka \
           --follow-imports \
           --include-package-data=pygame \
-          --standalone \
           --onefile \
           --lto=yes \
           --output-dir=build \
@@ -77,7 +76,6 @@ jobs:
         python -m nuitka ^
         --follow-imports ^
         --include-package-data=pygame ^
-        --standalone ^
         --onefile ^
         --lto=yes ^
         --windows-disable-console ^
