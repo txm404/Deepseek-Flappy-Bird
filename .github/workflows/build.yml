@@ -25,7 +25,7 @@ jobs:
     - name: Install Nuitka
       run: pip install nuitka
 
-    - name: Build with Nuitka (Linux)
+    - name: Build with Nuitka
       run: |
         python -m nuitka \
           --follow-imports \
@@ -35,12 +35,12 @@ jobs:
           --output-dir=build \
           -o flappy-bird \
           main.py
-    
-    - name: Package Linux binary
+
+    - name: Package binary
       run: |
-        TIMESTAMP=$(date +%Y%m%d%H%M)
-        mkdir -p flappy-bird-linux-$TIMESTAMP
-        cp build/main.dist/flappy-bird flappy-bird-linux-$TIMESTAMP/flappy-bird-linux-$TIMESTAMP
+        TIMESTAMP=$(date +%Y%m%d%H%M) && \
+        mkdir -p flappy-bird-linux-$TIMESTAMP && \
+        cp build/main.dist/flappy-bird flappy-bird-linux-$TIMESTAMP/flappy-bird-linux-$TIMESTAMP && \
         chmod +x flappy-bird-linux-$TIMESTAMP/flappy-bird-linux-$TIMESTAMP
 
     - name: Upload artifact
@@ -62,7 +62,6 @@ jobs:
 
     - name: Install dependencies
       run: |
-        # 安装Windows版SDL2依赖
         choco install -y vcpython27 sdl2 sdl2_ttf sdl2_image
         pip install pygame==2.5.2
 
@@ -94,12 +93,9 @@ jobs:
           build\main.dist\flappy-bird-windows-*.exe
           build\main.dist\
 
-
   publish-release:
     needs: [build-linux, build-windows]
     runs-on: ubuntu-latest
-    permissions:
-      contents: write 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -128,7 +124,6 @@ jobs:
           cd release-artifacts
           find . -name "flappy-bird-windows-*.exe" | xargs -I{} zip -j {}.zip {}
 
-
       - name: Create and push Git tag
         if: "github.event_name == 'push' && github.ref == 'refs/heads/main'"
         run: |
@@ -148,6 +143,3 @@ jobs:
           files: "release-artifacts/*.zip"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
-  
