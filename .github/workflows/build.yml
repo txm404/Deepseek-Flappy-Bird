@@ -133,33 +133,36 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-
-      - name: Verify artifacts
+      - name: Prepare release assets
         run: |
-          echo "=== Downloaded Artifacts ==="
-          find artifacts -type f -exec ls -lh {} \;
-
-      - name: Prepare release files
-        run: |
-          mkdir release_files
-          # Linux
-          find artifacts/linux-build -name "*.zip" -exec cp {} release_files \;
-          # Windows
-          find artifacts/windows-build -name "*.zip" -exec cp {} release_files \;
-          # Verify
+          mkdir -p release_files
+          find artifacts -name "*.zip" -exec cp {} release_files \;
           ls -lh release_files
-
-      - name: Create Release
+      - name: Generate release tag
+        id: tag
+        run: |
+          # 使用符合semver规范的标签格式
+          TAG=$(date -u +"v%Y.%m.%d.%H%M")
+          echo "TAG_NAME=${TAG}" >> $GITHUB_OUTPUT
+          echo "Generated tag: ${TAG}"
+      - name: Create and push tag
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git tag ${{ steps.tag.outputs.TAG_NAME }}
+          git push origin ${{ steps.tag.outputs.TAG_NAME }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v$(date +%Y.%m.%d-%H%M)
+          tag_name: ${{ steps.tag.outputs.TAG_NAME }}
           files: |
             release_files/flappy-bird-linux-*.zip
             release_files/flappy-bird-windows-*.zip
