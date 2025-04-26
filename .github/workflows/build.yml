@@ -98,6 +98,8 @@ jobs:
   publish-release:
     needs: [build-linux, build-windows]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       # 1️⃣ 必须加上这个代码拉取步骤，否则 git 命令无法运行！
       - name: Checkout repository
