@@ -25,7 +25,7 @@ jobs:
     - name: Install Nuitka
       run: pip install nuitka
 
-    - name: Build with Nuitka
+    - name: Build with Nuitka (Linux)
       run: |
         python -m nuitka \
           --follow-imports \
@@ -35,14 +35,13 @@ jobs:
           --output-dir=build \
           -o flappy-bird \
           main.py
-
-    - name: Package binary
+    
+    - name: Package Linux binary
       run: |
-        TIMESTAMP=$(date +%Y%m%d%H%M) && \
-        mkdir flappy-bird-linux-$TIMESTAMP && \
-        cp -r build/main.dist/* flappy-bird-linux-$TIMESTAMP/ && \
-        mv flappy-bird-linux-$TIMESTAMP/flappy-bird flappy-bird-linux-$TIMESTAMP/flappy-bird-$TIMESTAMP && \
-        chmod +x flappy-bird-linux-$TIMESTAMP/flappy-bird-$TIMESTAMP
+        TIMESTAMP=$(date +%Y%m%d%H%M)
+        mkdir -p flappy-bird-linux-$TIMESTAMP
+        cp build/main.dist/flappy-bird flappy-bird-linux-$TIMESTAMP/flappy-bird-linux-$TIMESTAMP
+        chmod +x flappy-bird-linux-$TIMESTAMP/flappy-bird-linux-$TIMESTAMP
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
