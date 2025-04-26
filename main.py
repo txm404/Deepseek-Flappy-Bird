@@ -2,6 +2,7 @@ import pygame
 import random
 import sys
 import math
+import os
 
 # 初始化pygame
 pygame.init()
@@ -27,6 +28,30 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('像素小鸟')
 clock = pygame.time.Clock()
 font = pygame.font.SysFont('Noto Sans CJK TC', 30)
+highscore_font = pygame.font.SysFont('Noto Sans CJK TC', 25) # Smaller font for highscore
+
+HIGHSCORE_FILE = "highscore.txt"
+
+# Helper function to load high score
+def load_highscore():
+    if os.path.exists(HIGHSCORE_FILE):
+        try:
+            with open(HIGHSCORE_FILE, 'r') as f:
+                return int(f.read())
+        except ValueError:
+            print(f"Warning: Could not read high score from {HIGHSCORE_FILE}. Resetting to 0.")
+            return 0
+    else:
+        return 0
+
+# Helper function to save high score
+def save_highscore(score):
+    try:
+        with open(HIGHSCORE_FILE, 'w') as f:
+            f.write(str(score))
+    except IOError:
+        print(f"Warning: Could not save high score to {HIGHSCORE_FILE}.")
+
 
 class Bird:
     def __init__(self):
@@ -101,6 +126,7 @@ def main():
     last_pipe = pygame.time.get_ticks()
     game_active = False
     game_over = False
+    highscore = load_highscore() # Load high score at the start
     
     while True:
         clock.tick(60)
@@ -148,6 +174,9 @@ def main():
                 if pipe.collide(bird):
                     game_active = False
                     game_over = True
+                    if score > highscore: # Check and save high score on collision
+                        highscore = score
+                        save_highscore(highscore)
                     
                 # 移除屏幕外的管道
                 if pipe.x < -pipe.width:
@@ -157,6 +186,9 @@ def main():
             if bird.y + bird.height >= SCREEN_HEIGHT:
                 game_active = False
                 game_over = True
+                if score > highscore: # Check and save high score on hitting ground
+                    highscore = score
+                    save_highscore(highscore)
         
         # 绘制
         for pipe in pipes:
@@ -173,10 +205,25 @@ def main():
         # 游戏开始/结束提示
         if not game_active:
             if game_over:
+                # Game Over Text
                 text = font.render('游戏结束!', True, WHITE)
-                text2 = font.render('按空格键重新开始', True, WHITE)
-                screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, SCREEN_HEIGHT // 2 - 40))
-                screen.blit(text2, (SCREEN_WIDTH // 2 - text2.get_width() // 2, SCREEN_HEIGHT // 2 + 10))
+                text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 60))
+                screen.blit(text, text_rect)
+
+                # Final Score Text
+                score_text_end = highscore_font.render(f'得分: {score}', True, WHITE)
+                score_rect_end = score_text_end.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20))
+                screen.blit(score_text_end, score_rect_end)
+
+                # High Score Text
+                highscore_text = highscore_font.render(f'最高分: {highscore}', True, WHITE)
+                highscore_rect = highscore_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 10))
+                screen.blit(highscore_text, highscore_rect)
+
+                # Restart Text
+                text2 = highscore_font.render('按空格键重新开始', True, WHITE)
+                text2_rect = text2.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 50))
+                screen.blit(text2, text2_rect)
             else:
                 # 开始游戏动画
                 bird.y = SCREEN_HEIGHT // 2 + 50 * math.sin(pygame.time.get_ticks() * 0.005)
