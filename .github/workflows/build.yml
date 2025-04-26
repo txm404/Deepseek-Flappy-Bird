@@ -146,29 +146,32 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Download Linux build
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           name: linux-build
-          path: release-artifacts
-
-      - name: Download Windows build
+          path: release-artifacts/linux
+      - name: Download Windows artifact
         uses: actions/download-artifact@v4
         with:
           name: windows-build
-          path: release-artifacts
-
+          path: release-artifacts/windows
+      - name: Verify files
+        run: |
+          echo "=== Linux Artifacts ==="
+          ls -lh release-artifacts/linux
+          echo "=== Windows Artifacts ==="
+          ls -lh release-artifacts/windows
       - name: Prepare release assets
         run: |
-          # Linux
-          cd release-artifacts
-          find . -name "flappy-bird-linux-*" -type d | xargs -I{} zip -r {}.zip {}
-
-          # Windows
-          find . -name "flappy-bird-windows-*.exe" -exec zip -j {}.zip {} \;
-          ls -lh *.zip
-
+          # Linux (已由build-linux完成压缩)
+          find release-artifacts/linux -name "*.zip" -exec cp {} . \;
+          
+          # Windows (直接使用exe文件)
+          find release-artifacts/windows -name "*.exe" -exec cp {} . \;
+          
+          # 再次验证
+          ls -lh *.zip *.exe
       - name: Create release tag
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
@@ -180,14 +183,13 @@ jobs:
           echo "TAG=$TAG" >> $GITHUB_ENV
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.TAG }}
           files: |
-            release-artifacts/*.zip
-            release-artifacts/*.exe.zip
+            flappy-bird-*.zip
+            flappy-bird-*.exe
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
